@@ -1,0 +1,7 @@
+torch>=1.11.0
+torchvision>=0.12.0
+albumentations==1.1.0
+deep-utils>=0.9.6
+pytorch-lightning==1.6.2
+opencv-python=>4.6.0.66
+scikit-learn>=1.1.1
