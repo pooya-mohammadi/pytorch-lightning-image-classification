@@ -17,6 +17,10 @@ class ModelConfig:
     std = [0.229, 0.224, 0.225]
     last_layer_nodes = 512
 
+    n_classes = len(
+        [d for d in os.listdir(DirConfig.dataset_dir) if
+         os.path.isdir(os.path.join(DirConfig.dataset_dir, d))]) if os.path.isdir(DirConfig.dataset_dir) else 0
+
 
 class AugConfig:
     train_transform = A.Compose(
@@ -38,12 +42,22 @@ class DeviceConfig:
     pin_memory = True if torch.cuda.is_available() else False
     n_workers = 8
 
+    @classmethod
+    def update_device(cls):
+        if cls.device is None:
+            cls.device = "cuda" if torch.cuda.is_available() else "cpu"
+            cls.pin_memory = True if cls.device != 'cpu' else False
 
-class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig):
-    train_epochs = 25
+
+class SaveConfig:
+    save_model_w_weight = True
+
+
+class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig, SaveConfig):
+    train_epochs = 15
     train_lr = 1e-3
 
-    finetune_epochs = 50
+    finetune_epochs = 25
     finetune_lr = 1e-4
     finetune_layers = 50
 
@@ -53,5 +67,22 @@ class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig):
     validation_size = 0.2
     batch_size = 64
 
-    n_classes = len(
-        [d for d in os.listdir(DirConfig.dataset_dir) if os.path.isdir(os.path.join(DirConfig.dataset_dir, d))])
+    @classmethod
+    def update_config_param(cls, args):
+        variables = vars(args)
+        for k, v in variables.items():
+            if hasattr(cls, k):
+                setattr(cls, k, v)
+            else:
+                raise ValueError(f"value {k} is not defined in Config...")
+        cls.update()
+
+    @classmethod
+    def update_model(cls):
+        cls.n_classes = len(
+            [d for d in os.listdir(cls.dataset_dir) if os.path.isdir(os.path.join(cls.dataset_dir, d))])
+
+    @classmethod
+    def update(cls):
+        cls.update_device()
+        cls.update_model()
