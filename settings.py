@@ -56,10 +56,10 @@ class DeviceConfig:
 
 @dataclass(init=True, repr=True)
 class SaveConfig:
-    save_model_w_weight = True
+    save_model_w_weight = False
 
 
-@dataclass(init=True, repr=True)
+@dataclass(init=True)
 class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig, SaveConfig):
     train_epochs = 5
     train_lr = 1e-3
@@ -94,3 +94,13 @@ class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig, SaveConfig):
     def __repr__(self):
         variables = vars(self)
         return f"{self.__class__.__name__} -> " + ", ".join(f"{k}: {v}" for k, v in variables.items())
+
+    def vars(self) -> dict:
+        out = dict()
+        for key in dir(self):
+            val = getattr(self, key)
+            if (key.startswith("__") and key.endswith("__")) or type(val).__name__ == "method":
+                continue
+            else:
+                out[key] = val
+        return out

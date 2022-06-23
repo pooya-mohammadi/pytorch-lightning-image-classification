@@ -42,7 +42,8 @@ def main():
                          min_epochs=config.train_epochs // 10,
                          callbacks=[model_checkpoint, learning_rate_monitor],
                          default_root_dir=train_dir)
-    lit_model = LitModel(config)
+    lit_model = LitModel(config.model_name, config.n_classes, config.last_layer_nodes, config.train_lr,
+                         config.lr_reduce_factor, config.lr_patience)
     lit_model.model.model_ft.classifier[1].apply(BlocksTorch.weights_init)
     train_loader, val_loader = ImageClassificationDataset.get_loaders(config)
     log_print(logger, "Training the model...")
@@ -68,8 +69,12 @@ def main():
     # Adding artifacts to weights
     weight_path = output_dir / f"{config.file_name}.ckpt"
     best_weight = torch.load(weight_path)
-    best_weight['config'] = config
-    best_weight['class_to_id'] = train_loader.dataset.class_to_id
+    best_weight['id_to_class'] = {v: k for k, v in train_loader.dataset.class_to_id.items()}
+    for k, v in config.vars().items():
+        if k not in best_weight:
+            best_weight[k] = v
+        else:
+            log_print(logger, f"[Warning] Did not save {k} = {v} because there is a variable with the same name!")
     if config.save_model_w_weight:
         best_weight['model'] = lit_model.model
     torch.save(best_weight, weight_path)

@@ -40,7 +40,7 @@ class ImageClassificationDataset(Dataset):
                                                    batch_size=config.batch_size,
                                                    shuffle=True,
                                                    num_workers=config.n_workers,
-                                                   pin_memory=config.pin_memory
+                                                   # pin_memory=config.pin_memory
                                                    )
 
         val_dataset = ImageClassificationDataset(x_val, y_val, transform=config.val_transform, class_to_id=class_to_id)
@@ -48,7 +48,7 @@ class ImageClassificationDataset(Dataset):
                                                  batch_size=config.batch_size,
                                                  shuffle=False,
                                                  num_workers=config.n_workers,
-                                                 pin_memory=config.pin_memory
+                                                 # pin_memory=config.pin_memory
                                                  )
 
         return train_loader, val_loader

@@ -8,14 +8,15 @@ from torch import nn
 
 
 class LitModel(pl.LightningModule):
-    def __init__(self, config, logger=None, verbose=1):
+    def __init__(self, model_name, n_classes, last_layer_nodes, lr, lr_reduce_factor, lr_patience, logger=None,
+                 verbose=1):
         super(LitModel, self).__init__()
         self.save_hyperparameters()
 
-        self.lr = self.hparams.config.train_lr
-        self.model = TorchVisionModel(model_name=self.hparams.config.model_name,
-                                      num_classes=self.hparams.config.n_classes,
-                                      last_layer_nodes=self.hparams.config.last_layer_nodes)
+        self.lr = self.hparams.lr
+        self.model = TorchVisionModel(model_name=self.hparams.model_name,
+                                      num_classes=self.hparams.n_classes,
+                                      last_layer_nodes=self.hparams.last_layer_nodes)
         self.criterion = nn.CrossEntropyLoss()
         self.outer_logger = logger
         self.verbose = verbose
@@ -79,6 +80,6 @@ class LitModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.lr)
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=self.hparams.config.lr_reduce_factor,
-                                      patience=self.hparams.config.lr_patience, verbose=True)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=self.hparams.lr_reduce_factor,
+                                      patience=self.hparams.lr_patience, verbose=True)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "val_loss"}
