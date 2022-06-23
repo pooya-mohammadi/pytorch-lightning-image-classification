@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 from deep_utils import log_print
 from sklearn.metrics import f1_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from model import TorchVisionModel
+from deep_utils import TorchVisionModel
 from torch import nn
 
 
