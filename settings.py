@@ -1,15 +1,18 @@
 import os
+from dataclasses import dataclass
 import torch
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 
+@dataclass(init=True, repr=True)
 class DirConfig:
     dataset_dir = "./dataset"
     output_dir = "./output"
     file_name = "best"
 
 
+@dataclass(init=True, repr=True)
 class ModelConfig:
     model_name = "squeezenet"
     input_size = 224
@@ -22,6 +25,7 @@ class ModelConfig:
          os.path.isdir(os.path.join(DirConfig.dataset_dir, d))]) if os.path.isdir(DirConfig.dataset_dir) else 0
 
 
+@dataclass(init=True, repr=True)
 class AugConfig:
     train_transform = A.Compose(
         [A.Resize(height=ModelConfig.input_size, width=ModelConfig.input_size),
@@ -37,6 +41,7 @@ class AugConfig:
          ])
 
 
+@dataclass(init=True, repr=True)
 class DeviceConfig:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     pin_memory = True if torch.cuda.is_available() else False
@@ -49,15 +54,17 @@ class DeviceConfig:
             cls.pin_memory = True if cls.device != 'cpu' else False
 
 
+@dataclass(init=True, repr=True)
 class SaveConfig:
     save_model_w_weight = True
 
 
+@dataclass(init=True, repr=True)
 class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig, SaveConfig):
-    train_epochs = 15
+    train_epochs = 5
     train_lr = 1e-3
 
-    finetune_epochs = 25
+    finetune_epochs = 5
     finetune_lr = 1e-4
     finetune_layers = 50
 
@@ -67,22 +74,23 @@ class Config(DirConfig, ModelConfig, AugConfig, DeviceConfig, SaveConfig):
     validation_size = 0.2
     batch_size = 64
 
-    @classmethod
-    def update_config_param(cls, args):
+    def update_config_param(self, args):
         variables = vars(args)
         for k, v in variables.items():
-            if hasattr(cls, k):
-                setattr(cls, k, v)
+            if hasattr(self, k):
+                setattr(self, k, v)
             else:
                 raise ValueError(f"value {k} is not defined in Config...")
-        cls.update()
+        self.update()
 
-    @classmethod
-    def update_model(cls):
-        cls.n_classes = len(
-            [d for d in os.listdir(cls.dataset_dir) if os.path.isdir(os.path.join(cls.dataset_dir, d))])
+    def update_model(self):
+        self.n_classes = len(
+            [d for d in os.listdir(self.dataset_dir) if os.path.isdir(os.path.join(self.dataset_dir, d))])
 
-    @classmethod
-    def update(cls):
-        cls.update_device()
-        cls.update_model()
+    def update(self):
+        self.update_device()
+        self.update_model()
+
+    def __repr__(self):
+        variables = vars(self)
+        return f"{self.__class__.__name__} -> " + ", ".join(f"{k}: {v}" for k, v in variables.items())

@@ -1,3 +1,4 @@
+import os
 from time import time
 from argparse import ArgumentParser
 from pathlib import Path
@@ -5,46 +6,57 @@ from typing import Union
 import numpy as np
 import cv2
 import torch
-from settings import Config
-from PIL import Image, ImageDraw
-from lightning_model import LitModel
-from deep_utils import load_pickle, show_destroy_cv2
+from model import TorchVisionModel
 
 
-class ModelPrediction:
+class Inference:
     def __init__(self, model_path, device="cpu"):
-        self.device = device
-        self.model = LitModel.load_from_checkpoint(model_path).to(device).eval()
-        model_params = torch.load(model_path)
-        # escape cold start
-        self.model(torch.randn((1, 3, 224, 224)).to(device))
-        self.label_map = {v: k  for k, v in model_params['class_to_id'].items()}
-        self.transform = Config.val_transform
+        save_params = torch.load(model_path, map_location=device)
+        config = save_params['config']
+        self.model = TorchVisionModel(model_name=config.model_name, num_classes=config.n_classes,
+                                      last_layer_nodes=config.last_layer_nodes, use_pretrained=False,
+                                      feature_extract=True)
+        try:
+            self.model.load_state_dict(save_params['state_dict'])
+        except:
+            self.model.load_state_dict({".".join(k.split(".")[1:]): v for k, v in save_params['state_dict'].items()})
 
-    def detect(self, img: Union[str, Path, np.ndarray]):
-        if type(img) is not np.ndarray:
+        self.device = device
+        self.label_map = {v: k for k, v in save_params['class_to_id'].items()}
+        self.model.eval()
+        self.transform = config.val_transform
+
+    def infer(self, img: Union[str, Path, np.ndarray]):
+        if isinstance(img, Path) or isinstance(img, str):
             img = cv2.imread(img)[..., ::-1]
         image = self.transform(image=img)["image"]
-        image = image.view(1, *image.size()).to(self.device)
+        image = image.view(1, *image.size())
         with torch.no_grad():
-            logits = self.model(image).cpu().squeeze(0).numpy()
+            image = image.to(self.device)
+            logits = self.model(image).squeeze(0).numpy()
         prediction = np.argmax(logits)
         return self.label_map[prediction]
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument("--model_path",
-                        default="/home/ai/projects/national-id-card-training/card_type_detection/output/exp_8/best.ckpt")
+    parser.add_argument("--model_path", required=True, help="path to saved model")
     parser.add_argument("--device", default="cpu", help="cuda or cpu")
-    parser.add_argument("--img_path", default="sample_images/samand_01.jpg")
+    parser.add_argument("--img_path", required=True, help="path to image")
     args = parser.parse_args()
-    model = ModelPrediction(args.model_path, device=args.device)
-    img = Image.open(args.img_path)
-    tic = time()
-    prediction = model.detect(args.img_path)
-    toc = time()
-    draw = ImageDraw.Draw(img)
-    draw.text((20, 20), prediction, (0, 255, 0))
-    print(f"Vehicle Color is: {prediction}\n, inference time: {toc - tic}")
-    show_destroy_cv2(np.array(img)[..., ::-1])
+    model = Inference(args.model_path, device=args.device)
+    if os.path.isdir(args.img_path):
+        for image_name in sorted(os.listdir(args.img_path)):
+            try:
+                tic = time()
+                image_path = os.path.join(args.img_path, image_name)
+                prediction = model.infer(image_path)
+                toc = time()
+                print(f"predicted class for {image_path} is {prediction}\ninference time: {toc - tic}")
+            except:
+                continue
+    else:
+        tic = time()
+        prediction = model.infer(args.img_path)
+        toc = time()
+        print(f"predicted class is for {args.img_path} is {prediction}\ninference time: {toc - tic}")

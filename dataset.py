@@ -1,10 +1,8 @@
-from os.path import join
 import torch
 from torch.utils.data import Dataset
 import cv2
 from sklearn.model_selection import train_test_split
-from deep_utils import crawl_directory_dataset, dump_pickle
-from settings import Config
+from deep_utils import crawl_directory_dataset
 
 
 class ImageClassificationDataset(Dataset):
@@ -30,27 +28,27 @@ class ImageClassificationDataset(Dataset):
         return sample
 
     @staticmethod
-    def get_loaders():
-        x, y = crawl_directory_dataset(Config.dataset_dir)
+    def get_loaders(config):
+        x, y = crawl_directory_dataset(config.dataset_dir)
         x_train, x_val, y_train, y_val = train_test_split(x, y,
-                                                          test_size=Config.validation_size,
+                                                          test_size=config.validation_size,
                                                           stratify=y)
         class_to_id = {v: k for k, v in enumerate(set(y_train))}
-        train_dataset = ImageClassificationDataset(x_train, y_train, transform=Config.train_transform,
+        train_dataset = ImageClassificationDataset(x_train, y_train, transform=config.train_transform,
                                                    class_to_id=class_to_id)
         train_loader = torch.utils.data.DataLoader(train_dataset,
-                                                   batch_size=Config.batch_size,
+                                                   batch_size=config.batch_size,
                                                    shuffle=True,
-                                                   num_workers=Config.n_workers,
-                                                   pin_memory=Config.pin_memory
+                                                   num_workers=config.n_workers,
+                                                   pin_memory=config.pin_memory
                                                    )
 
-        val_dataset = ImageClassificationDataset(x_val, y_val, transform=Config.val_transform, class_to_id=class_to_id)
+        val_dataset = ImageClassificationDataset(x_val, y_val, transform=config.val_transform, class_to_id=class_to_id)
         val_loader = torch.utils.data.DataLoader(val_dataset,
-                                                 batch_size=Config.batch_size,
+                                                 batch_size=config.batch_size,
                                                  shuffle=False,
-                                                 num_workers=Config.n_workers,
-                                                 pin_memory=Config.pin_memory
+                                                 num_workers=config.n_workers,
+                                                 pin_memory=config.pin_memory
                                                  )
 
         return train_loader, val_loader
