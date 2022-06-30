@@ -16,7 +16,7 @@ parser.add_argument("--output_dir", type=Path, default="./output",
                     help="path to the output directory, default: ./output")
 parser.add_argument("--train_epochs", type=int, default=5, help="number of training epochs")
 parser.add_argument("--finetune_epochs", type=int, default=5, help="number of fine-tuning epochs")
-parser.add_argument("--device", default=None,
+parser.add_argument("--device", default="cuda",
                     help="what should be the device for training, default is None! If cuda is found it will be chosen!")
 parser.add_argument("--n_workers", type=int, default=8, help="Number of workers for data-loaders")
 parser.add_argument("--finetune_layers", type=int, default=50,
