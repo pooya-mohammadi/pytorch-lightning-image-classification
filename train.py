@@ -10,8 +10,8 @@ from dataset import ImageClassificationDataset
 from argparse import ArgumentParser
 
 parser = ArgumentParser()
-parser.add_argument("--model_name", default="squeezenet", help="model name to be trained, default is squeezenet")
-parser.add_argument("--dataset_dir", type=Path, default="./dataset", help="path to the dataset, default: ./dataset")
+parser.add_argument("--model_name", type=str, default="squeezenet", help="model name to be trained, default is squeezenet")
+parser.add_argument("--dataset_dir", type=Path, required=True, help="path to the dataset to train the model on it")
 parser.add_argument("--output_dir", type=Path, default="./output",
                     help="path to the output directory, default: ./output")
 parser.add_argument("--train_epochs", type=int, default=5, help="number of training epochs")
